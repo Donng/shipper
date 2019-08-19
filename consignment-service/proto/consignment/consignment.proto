@@ -6,6 +6,7 @@ package consignment;
 // 服务定义，暴露给其他服务的方法
 service ShippingService {
       rpc CreateConsignment(Consignment) returns (Response) {}
+      rpc GetConsignments(GetRequest) returns (Response) {}
 }
 
 // message 指消息类型，宽泛的说就是你自己定义的数据解耦股
@@ -24,7 +25,12 @@ message Container {
     string user_id = 4;
 }
 
+message GetRequest {}
+
 message Response {
     bool created = 1;
     Consignment consignment = 2;
+
+    // repeated 指 slice
+    repeated Consignment consignments = 3;
 }

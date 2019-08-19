@@ -18,6 +18,7 @@ const (
 // 定义需要实现的服务接口
 type IRepository interface {
 	Create(*pb.Consignment) (*pb.Consignment, error)
+	GetAll() []*pb.Consignment
 }
 
 // 模拟数据库存储的功能，之后将用真正的实现代替
@@ -35,6 +36,10 @@ func (repo *Repository) Create(consignment *pb.Consignment) (*pb.Consignment, er
 	return consignment, nil
 }
 
+func (repo *Repository) GetAll() []*pb.Consignment {
+	return repo.consignments
+}
+
 // service 要实现在proto中定义的所有方法
 type service struct {
 	repo IRepository
@@ -49,6 +54,13 @@ func (s *service) CreateConsignment(ctx context.Context, consignment *pb.Consign
 	}
 
 	return &pb.Response{Created: true, Consignment: consignment}, nil
+}
+
+// 获取所有货物的接口实现
+func (s *service) GetConsignments(ctx context.Context,req *pb.GetRequest) (*pb.Response, error) {
+	consignments := s.repo.GetAll()
+
+	return &pb.Response{Consignments:consignments}, nil
 }
 
 func main() {
