@@ -7,4 +7,4 @@ shipper 的技术栈包括 gRPC、protobuf、docker、go-micro 等，是一个�
 每个阶段都对应一个分支 branch：
 
 - tutorial-1：基于 gRPC 和 protobuf 完成一个最简单的微服务。
-
+- tutorial-2: 在 tutorial-1 的基础上，使用 go-micro 和 docker 服务化。

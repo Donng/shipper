@@ -2,17 +2,11 @@ package main
 
 import (
 	"context"
-	"log"
-	"net"
+	"fmt"
 	"sync"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
+	"github.com/micro/go-micro"
 	pb "shipper/consignment-service/proto/consignment"
-)
-
-const (
-	port = ":50051"
 )
 
 // 定义需要实现的服务接口
@@ -46,41 +40,43 @@ type service struct {
 }
 
 // 创建货物的接口实现
-func (s *service) CreateConsignment(ctx context.Context, consignment *pb.Consignment) (*pb.Response, error) {
+func (s *service) CreateConsignment(ctx context.Context, consignment *pb.Consignment, resp *pb.Response) error {
 	// 保存 consignment
 	consignment, err := s.repo.Create(consignment)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return &pb.Response{Created: true, Consignment: consignment}, nil
+	resp.Created = true
+	resp.Consignment = consignment
+	return nil
 }
 
 // 获取所有货物的接口实现
-func (s *service) GetConsignments(ctx context.Context,req *pb.GetRequest) (*pb.Response, error) {
+func (s *service) GetConsignments(ctx context.Context, req *pb.GetRequest, resp *pb.Response) error {
 	consignments := s.repo.GetAll()
 
-	return &pb.Response{Consignments:consignments}, nil
+	resp.Consignments = consignments
+	return nil
 }
 
 func main() {
 	repo := &Repository{}
 
-	// 设置 gRPC 服务
-	lis, err := net.Listen("tcp", port)
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
-	}
-	s := grpc.NewServer()
+	// 创建新的服务，其中包含一些可选的配置
+	srv := micro.NewService(
+		// name 方法必须与protobuf定义的package name相匹配
+		micro.Name("go.micro.srv.consignment"),
+	)
 
-	// 注册服务到 gRPC
-	pb.RegisterShippingServiceServer(s, &service{repo})
+	// init 解析命令行参数
+	srv.Init()
 
-	// 注册反射服务到 gRPC 服务器
-	reflection.Register(s)
+	// 注册 handler
+	pb.RegisterShippingServiceHandler(srv.Server(), &service{repo})
 
-	log.Println("Running on port:", port)
-	if err := s.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
+	// 运行服务器
+	if err := srv.Run(); err != nil {
+		fmt.Println(err)
 	}
 }
