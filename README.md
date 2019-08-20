@@ -10,5 +10,17 @@ tutorial-2 在 docker 容器中执行 `go module download` 命令，会因为网
 
 每个阶段都对应一个分支 branch：
 
-- tutorial-1：基于 gRPC 和 protobuf 完成一个最简单的微服务。
-- tutorial-2: 在 tutorial-1 的基础上，使用 go-micro 和 docker 服务化。
+### tutorial-1
+基于 gRPC 和 protobuf 完成一个最简单的微服务。
+### tutorial-2
+在 tutorial-1 的基础上，使用 go-micro 和 docker 服务化，并添加了 vessel 货船服务。
+
+货运服务中使用了vessel的服务，在 docker 中 go build 会出现找不到 vessel 包的情况，需要先将 vessel 上传到 github，然后修改导入地址为线上才可以。
+
+### 名词注释
+
+每次货运服务需要将集装箱放到合适的货船上。
+
+- consignment: 货运服务
+- vessel: 货船
+- container: 集装箱

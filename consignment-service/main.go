@@ -3,10 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"sync"
 
 	"github.com/micro/go-micro"
 	pb "shipper/consignment-service/proto/consignment"
+	vesselProto "shipper/vessel-service/proto/vessel"
 )
 
 // 定义需要实现的服务接口
@@ -36,13 +38,25 @@ func (repo *Repository) GetAll() []*pb.Consignment {
 
 // service 要实现在proto中定义的所有方法
 type service struct {
-	repo IRepository
+	repo         IRepository
+	vesselClient vesselProto.VesselServiceClient
 }
 
 // 创建货物的接口实现
 func (s *service) CreateConsignment(ctx context.Context, consignment *pb.Consignment, resp *pb.Response) error {
-	// 保存 consignment
-	consignment, err := s.repo.Create(consignment)
+	// 调用货船服务的客户端实例，使用货运重量和此次货运的集装箱的数量作为容量值
+	vesselResponse, err := s.vesselClient.FindAvailable(context.Background(), &vesselProto.Specification{
+		MaxWeight: consignment.Weight,
+		Capacity: int32(len(consignment.Containers)),
+	})
+	log.Printf("Found vessel: %s \n", vesselResponse.Vessel.Name)
+	if err != nil {
+		return err
+	}
+
+	consignment.VesselId = vesselResponse.Vessel.Id
+
+	consignment, err = s.repo.Create(consignment)
 	if err != nil {
 		return err
 	}
@@ -72,8 +86,10 @@ func main() {
 	// init 解析命令行参数
 	srv.Init()
 
+	vesselClient := vesselProto.NewVesselServiceClient("go.micro.srv.vessel", srv.Client())
+
 	// 注册 handler
-	pb.RegisterShippingServiceHandler(srv.Server(), &service{repo})
+	pb.RegisterShippingServiceHandler(srv.Server(), &service{repo, vesselClient})
 
 	// 运行服务器
 	if err := srv.Run(); err != nil {
