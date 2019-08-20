@@ -4,6 +4,10 @@ shipper 的技术栈包括 gRPC、protobuf、docker、go-micro 等，是一个�
 
 此项目用于学习，然后根据自身的理解添加合适的中文注释，原系列有部分中文翻译的文章，但并不完善而且内容与英语原文稍有差异（可能是原文有更新，翻译的文章没有跟进）。
 
+注意：
+
+tutorial-2 在 docker 容器中执行 `go module download` 命令，会因为网络问题导致 golang.org 的包下载失败，我是依照 [此文章](https://www.simpleapples.com/2019/04/18/building-docker-image-behind-proxy/) 解决的代理问题。
+
 每个阶段都对应一个分支 branch：
 
 - tutorial-1：基于 gRPC 和 protobuf 完成一个最简单的微服务。
