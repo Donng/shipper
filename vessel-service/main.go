@@ -4,8 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
+	pb "github.com/Donng/shipper/vessel-service/proto/vessel"
 	"github.com/micro/go-micro"
-	pb "shipper/vessel-service/proto/vessel"
 )
 
 type IRepository interface {
