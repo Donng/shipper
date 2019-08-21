@@ -4,8 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
+	pb "github.com/Donng/shipper/vessel-service/proto/vessel"
 	"github.com/micro/go-micro"
-	pb "shipper/vessel-service/proto/vessel"
 )
 
 type IRepository interface {
@@ -19,7 +20,7 @@ type Repository struct {
 // 根据特定条件依次对比轮船，如果要求的容量和最大重量都低于轮船，则返回此轮船。
 func (repo *Repository) FindAvailable(spec *pb.Specification) (*pb.Vessel, error) {
 	for _, vessel := range repo.vessels {
-		if spec.Capacity <= vessel.Capacity && spec.MaxWeight <= vessel.Capacity {
+		if spec.Capacity <= vessel.Capacity && spec.MaxWeight <= vessel.MaxWeight {
 			return vessel, nil
 		}
 	}
@@ -34,9 +35,11 @@ type service struct {
 
 func (s *service) FindAvailable(ctx context.Context, req *pb.Specification, resp *pb.Response) error {
 	vessel, err := s.repo.FindAvailable(req)
-	if err == nil {
-		resp.Vessel = vessel
+	if err != nil {
+		fmt.Printf("err: %s, weight: %d, capacity: %d", err, req.MaxWeight, req.Capacity)
+		return err
 	}
+	resp.Vessel = vessel
 
 	return nil
 }

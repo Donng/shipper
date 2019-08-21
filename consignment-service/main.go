@@ -3,12 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"sync"
 
+	pb "github.com/Donng/shipper/consignment-service/proto/consignment"
+	vesselProto "github.com/Donng/shipper/vessel-service/proto/vessel"
 	"github.com/micro/go-micro"
-	pb "shipper/consignment-service/proto/consignment"
-	vesselProto "shipper/vessel-service/proto/vessel"
 )
 
 // 定义需要实现的服务接口
@@ -43,20 +42,20 @@ type service struct {
 }
 
 // 创建货物的接口实现
-func (s *service) CreateConsignment(ctx context.Context, consignment *pb.Consignment, resp *pb.Response) error {
+func (s *service) CreateConsignment(ctx context.Context, req *pb.Consignment, resp *pb.Response) error {
 	// 调用货船服务的客户端实例，使用货运重量和此次货运的集装箱的数量作为容量值
 	vesselResponse, err := s.vesselClient.FindAvailable(context.Background(), &vesselProto.Specification{
-		MaxWeight: consignment.Weight,
-		Capacity: int32(len(consignment.Containers)),
+		MaxWeight: req.Weight,
+		Capacity:  int32(len(req.Containers)),
 	})
-	log.Printf("Found vessel: %s \n", vesselResponse.Vessel.Name)
 	if err != nil {
 		return err
 	}
+	fmt.Printf("Found vessel: %s \n", vesselResponse.Vessel.Name)
 
-	consignment.VesselId = vesselResponse.Vessel.Id
+	req.VesselId = vesselResponse.Vessel.Id
 
-	consignment, err = s.repo.Create(consignment)
+	consignment, err := s.repo.Create(req)
 	if err != nil {
 		return err
 	}
