@@ -1,54 +1,43 @@
 package main
 
 import (
-	"context"
-	"errors"
 	"fmt"
+	"log"
+	"os"
 
 	pb "github.com/Donng/shipper/vessel-service/proto/vessel"
 	"github.com/micro/go-micro"
 )
 
-type IRepository interface {
-	FindAvailable(*pb.Specification) (*pb.Vessel, error)
-}
+const (
+	defaultHost = "localhost:27017"
+)
 
-type Repository struct {
-	vessels []*pb.Vessel
-}
-
-// 根据特定条件依次对比轮船，如果要求的容量和最大重量都低于轮船，则返回此轮船。
-func (repo *Repository) FindAvailable(spec *pb.Specification) (*pb.Vessel, error) {
-	for _, vessel := range repo.vessels {
-		if spec.Capacity <= vessel.Capacity && spec.MaxWeight <= vessel.MaxWeight {
-			return vessel, nil
-		}
+func createDummyData(repo Repository) {
+	vessels := []*pb.Vessel{
+		{Id: "vessel001", Name: "Boaty McBoatface", MaxWeight: 200000, Capacity: 500},
 	}
 
-	return nil, errors.New("No vessel found by that spec")
-}
-
-// gRPC 服务处理者
-type service struct {
-	repo IRepository
-}
-
-func (s *service) FindAvailable(ctx context.Context, req *pb.Specification, resp *pb.Response) error {
-	vessel, err := s.repo.FindAvailable(req)
-	if err != nil {
-		fmt.Printf("err: %s, weight: %d, capacity: %d", err, req.MaxWeight, req.Capacity)
-		return err
+	for _, v := range vessels {
+		repo.Create(v)
 	}
-	resp.Vessel = vessel
-
-	return nil
 }
 
 func main() {
-	vessels := []*pb.Vessel{
-		&pb.Vessel{Id: "vessel001", Name: "Boaty McBoatface", MaxWeight: 200000, Capacity: 500},
+	host := os.Getenv("DB_HOST")
+	if host == "" {
+		host = defaultHost
 	}
-	repo := &Repository{vessels}
+
+	client, err := CreateClient(host)
+	if err != nil {
+		log.Fatalf("Create client error: %v", err)
+	}
+
+	repo := &VesselRepository{client.Database(dbName).Collection(vesselCollection)}
+
+	// 添加模拟数据
+	createDummyData(repo)
 
 	srv := micro.NewService(
 		micro.Name("go.micro.srv.vessel"),
